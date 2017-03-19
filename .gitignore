@@ -1,0 +1,3 @@
+terraform/.env
+build/handler.zip
+build/handler.so
