@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -20,7 +19,7 @@ func Handle(evt *s3evt.Event, ctx *runtime.Context) (interface{}, error) {
 		if rec.EventName == "ObjectRemoved:Delete" {
 			err := sendSlack(rec)
 			if err != nil {
-				fmt.Printf("%s\n", err.Error())
+				log.Fatalf("%s\n", err.Error())
 			}
 		}
 	}
@@ -29,21 +28,20 @@ func Handle(evt *s3evt.Event, ctx *runtime.Context) (interface{}, error) {
 }
 
 func sendSlack(evt *s3evt.EventRecord) error {
-	fmt.Printf("trigger slack event")
+	log.Printf("trigger slack event")
 	params := slack.PostMessageParameters{}
-	channelID, timestamp, err := slackAPI.PostMessage("general", awsutil.Prettify(evt), params)
+	channelID, timestamp, err := slackAPI.PostMessage("general", "```"+awsutil.Prettify(evt)+"```", params)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
+	log.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
 	return nil
 }
 
 func init() {
 	slackToken := os.Getenv("slack_api_token")
 	if len(slackToken) < 0 {
-		fmt.Printf("%s\n", "slack API token not set")
-		os.Exit(1)
+		log.Fatalf("%s\n", "slack API token not set")
 	}
 
 	slackAPI = slack.New(slackToken)

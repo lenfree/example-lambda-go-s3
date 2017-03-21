@@ -7,11 +7,12 @@ resource "aws_iam_policy" "iam_for_lambda_cloudwatch" {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "",
       "Action": [
         "logs:*"
       ],
       "Effect": "Allow",
-      "Resource": "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      "Resource": "arn:aws:logs:ap-southeast-2:*:*"
     }
   ]
 }
@@ -55,4 +56,30 @@ resource "aws_lambda_function" "test_lambda" {
       slack_api_token = "<change_me>"
     }
   }
+}
+
+resource "aws_s3_bucket" "bucket" {
+  bucket = "lenfree-lambda"
+}
+
+resource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = "${aws_s3_bucket.bucket.id}"
+
+  lambda_function {
+    lambda_function_arn = "${aws_lambda_function.test_lambda.arn}"
+    events              = ["s3:ObjectCreated:*"]
+  }
+
+  lambda_function {
+    lambda_function_arn = "${aws_lambda_function.test_lambda.arn}"
+    events              = ["s3:ObjectRemoved:*"]
+  }
+}
+
+resource "aws_lambda_permission" "allow_s3" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.test_lambda.arn}"
+  principal     = "s3.amazonaws.com"
+  source_arn    = "${aws_s3_bucket.bucket.arn}"
 }
